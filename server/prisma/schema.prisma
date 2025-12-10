@@ -1,0 +1,352 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  password  String
+  name      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  recipes        Recipe[]
+  mealPlans      MealPlan[]
+  pantryItems    PantryItem[]
+  shoppingLists  ShoppingListItem[]
+  dailyLogs      DailyLog[]
+  workoutSessions WorkoutSession[]
+  metrics        MetricEntry[]
+  progressPhotos ProgressPhoto[]
+  finances       FinanceTransaction[]
+  contacts       Contact[]
+  projects       Project[]
+  calendarCredentials CalendarCredential[]
+  dailySteps    DailyStep[]
+  stepGoal      StepGoal?
+}
+
+model Recipe {
+  id          String             @id @default(uuid())
+  user        User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId      String
+  name        String
+  description String?
+  servings    Int                @default(1)
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
+  totalCalories Int              @default(0)
+  totalProtein  Float            @default(0)
+  totalCarbs    Float            @default(0)
+  totalFat      Float            @default(0)
+
+  ingredients RecipeIngredient[]
+  mealSlots   MealSlot[]
+  dailyLogs   DailyLog[]
+}
+
+model Ingredient {
+  id       String  @id @default(uuid())
+  name     String  @unique
+  unit     String? // g, ml, piece
+  calories Float   @default(0)
+  protein  Float   @default(0)
+  carbs    Float   @default(0)
+  fat      Float   @default(0)
+
+  recipeLinks RecipeIngredient[]
+}
+
+model RecipeIngredient {
+  id           String     @id @default(uuid())
+  recipe       Recipe     @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+  recipeId     String
+  ingredient   Ingredient @relation(fields: [ingredientId], references: [id], onDelete: Cascade)
+  ingredientId String
+  quantity     Float
+  unit         String?
+  ordering     Int        @default(0)
+  calories     Float      @default(0)
+  protein      Float      @default(0)
+  carbs        Float      @default(0)
+  fat          Float      @default(0)
+}
+
+model MealPlan {
+  id        String     @id @default(uuid())
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
+  weekStart DateTime
+  createdAt DateTime   @default(now())
+
+  slots MealSlot[]
+}
+
+enum MealType {
+  BREAKFAST
+  LUNCH
+  DINNER
+  SNACK
+}
+
+model MealSlot {
+  id         String    @id @default(uuid())
+  mealPlan   MealPlan  @relation(fields: [mealPlanId], references: [id], onDelete: Cascade)
+  mealPlanId String
+  date       DateTime
+  mealType   MealType
+  recipe     Recipe?   @relation(fields: [recipeId], references: [id])
+  recipeId   String?
+  notes      String?
+}
+
+model PantryItem {
+  id        String   @id @default(uuid())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
+  name      String
+  quantity  Float    @default(0)
+  unit      String?
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, name], name: "userId_name")
+}
+
+model ShoppingListItem {
+  id        String   @id @default(uuid())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
+  name      String
+  quantity  Float    @default(0)
+  unit      String?
+  checked   Boolean  @default(false)
+  createdAt DateTime @default(now())
+  source    ShoppingListSource @default(AUTO)
+}
+
+enum ShoppingListSource {
+  AUTO
+  MANUAL
+}
+
+model DailyLog {
+  id          String   @id @default(uuid())
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId      String
+  date        DateTime
+  recipe      Recipe?  @relation(fields: [recipeId], references: [id])
+  recipeId    String?
+  mealType    MealType?
+  servings    Float    @default(1)
+  calories    Int      @default(0)
+  protein     Float    @default(0)
+  carbs       Float    @default(0)
+  fat         Float    @default(0)
+  notes       String?
+  createdAt   DateTime @default(now())
+}
+
+// Sport tracker
+model WorkoutTemplate {
+  id          String             @id @default(uuid())
+  name        String             @unique
+  description String?
+  focus       String?
+  exercises   WorkoutExerciseTemplate[]
+  sessions    WorkoutSession[]
+}
+
+model WorkoutExerciseTemplate {
+  id              String           @id @default(uuid())
+  template        WorkoutTemplate  @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  templateId      String
+  name            String
+  sets            Int
+  repsMin         Int
+  repsMax         Int
+  restSeconds     Int
+  ordering        Int
+}
+
+model WorkoutSession {
+  id         String        @id @default(uuid())
+  user       User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId     String
+  template   WorkoutTemplate? @relation(fields: [templateId], references: [id])
+  templateId String?
+  date       DateTime       @default(now())
+  notes      String?
+
+  sets WorkoutSet[]
+}
+
+model WorkoutSet {
+  id         String         @id @default(uuid())
+  session    WorkoutSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  sessionId  String
+  exercise   String
+  setNumber  Int
+  weight     Float?
+  reps       Int?
+  rpe        Float?
+  volume     Float?         @default(0)
+}
+
+model DailyStep {
+  id        String   @id @default(uuid())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
+  date      DateTime
+  steps     Int      @default(0)
+  source    String?  @default("google_fit")
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, date])
+}
+
+model StepGoal {
+  id        String   @id @default(uuid())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
+  target    Int      @default(10000)
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId])
+}
+
+
+// Metrics tracker
+model MetricEntry {
+  id            String   @id @default(uuid())
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId        String
+  date          DateTime @default(now())
+  weight        Float?
+  height        Float?
+  waist         Float?
+  hips          Float?
+  chest         Float?
+  leftArm       Float?
+  rightArm      Float?
+  leftThigh     Float?
+  rightThigh    Float?
+  notes         String?
+}
+
+model ProgressPhoto {
+  id        String   @id @default(uuid())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
+  date      DateTime @default(now())
+  url       String
+  side      String? // front, side, back
+}
+
+// Finance tracker
+enum FinanceType {
+  INCOME
+  EXPENSE
+  INVESTMENT
+  SAVINGS
+}
+
+model FinanceTransaction {
+  id          String      @id @default(uuid())
+  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId      String
+  type        FinanceType
+  category    String
+  amount      Float
+  occurredAt  DateTime
+  notes       String?
+  createdAt   DateTime    @default(now())
+}
+
+// Social tracker
+model Contact {
+  id            String            @id @default(uuid())
+  user          User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId        String
+  name          String
+  relationship  String?
+  frequencyDays Int               @default(30)
+  lastContact   DateTime?
+  status        ContactStatus     @default(ACTIVE)
+  notes         String?
+  interactions  ContactInteraction[]
+}
+
+enum ContactStatus {
+  ACTIVE
+  COLD
+  GHOSTED
+}
+
+model ContactInteraction {
+  id        String   @id @default(uuid())
+  contact   Contact  @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  contactId String
+  occurredAt DateTime @default(now())
+  type       String?
+  notes      String?
+}
+
+// Projects
+model Project {
+  id          String       @id @default(uuid())
+  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId      String
+  name        String
+  description String?
+  status      ProjectStatus @default(ACTIVE)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  tasks Task[]
+}
+
+enum ProjectStatus {
+  ACTIVE
+  COMPLETED
+  ON_HOLD
+}
+
+model Task {
+  id          String     @id @default(uuid())
+  project     Project    @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  projectId   String
+  title       String
+  description String?
+  status      TaskStatus  @default(TODO)
+  dueDate     DateTime?
+  completedAt DateTime?
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+}
+
+enum TaskStatus {
+  TODO
+  IN_PROGRESS
+  DONE
+}
+
+model CalendarCredential {
+  id           String   @id @default(uuid())
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId       String
+  provider     String
+  accessToken  String
+  refreshToken String
+  scope        String?
+  tokenType    String?
+  expiryDate   DateTime?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @default(now()) @updatedAt
+
+  @@unique([userId, provider])
+}

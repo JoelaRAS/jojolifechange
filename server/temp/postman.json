@@ -1,0 +1,25 @@
+{
+  "info": {
+    "name": "LifeOS Sport OAuth",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Google Fit OAuth callback",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "https://lifeos.jojoserv.com/api/sport/steps/oauth/callback",
+          "protocol": "https",
+          "host": ["lifeos", "jojoserv", "com"],
+          "path": ["api","sport","steps","oauth","callback"],
+          "query": [
+            {"key": "state", "value": "{\"userId\":\"TEST\"}"},
+            {"key": "code", "value": "test"}
+          ]
+        }
+      }
+    }
+  ]
+}
