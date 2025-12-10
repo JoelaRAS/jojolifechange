@@ -4,6 +4,9 @@ yarn.lock
 package-lock.json
 dist
 build
+**/vite.config.d.ts
+*.tsbuildinfo
+.tsbuildinfo
 .env
 .env.*
 !.env.example
