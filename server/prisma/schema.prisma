@@ -15,20 +15,23 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  recipes        Recipe[]
-  mealPlans      MealPlan[]
-  pantryItems    PantryItem[]
-  shoppingLists  ShoppingListItem[]
-  dailyLogs      DailyLog[]
-  workoutSessions WorkoutSession[]
-  metrics        MetricEntry[]
-  progressPhotos ProgressPhoto[]
-  finances       FinanceTransaction[]
-  contacts       Contact[]
-  projects       Project[]
+  recipes          Recipe[]
+  mealPlans        MealPlan[]
+  pantryItems      PantryItem[]
+  shoppingLists    ShoppingListItem[]
+  dailyLogs        DailyLog[]
+  workoutSessions  WorkoutSession[]
+  workoutTemplates WorkoutTemplate[]
+  exercises        Exercise[]
+  ingredients      Ingredient[]
+  metrics          MetricEntry[]
+  progressPhotos   ProgressPhoto[]
+  finances         FinanceTransaction[]
+  contacts         Contact[]
+  projects         Project[]
   calendarCredentials CalendarCredential[]
-  dailySteps    DailyStep[]
-  stepGoal      StepGoal?
+  dailySteps       DailyStep[]
+  stepGoal         StepGoal?
 }
 
 model Recipe {
@@ -51,15 +54,26 @@ model Recipe {
 }
 
 model Ingredient {
-  id       String  @id @default(uuid())
-  name     String  @unique
-  unit     String? // g, ml, piece
-  calories Float   @default(0)
-  protein  Float   @default(0)
-  carbs    Float   @default(0)
-  fat      Float   @default(0)
+  id        String   @id @default(uuid())
+  user      User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String?  // null = ingrédient global/partagé
+  name      String
+  barcode   String?  // Code-barres OpenFoodFacts
+  unit      String?  // g, ml, piece
+  calories  Float    @default(0) // pour 100g
+  protein   Float    @default(0)
+  carbs     Float    @default(0)
+  fat       Float    @default(0)
+  imageUrl  String?
+  source    String   @default("manual") // manual, openfoodfacts, gemini
+  isGlobal  Boolean  @default(false)
+  createdAt DateTime @default(now())
 
   recipeLinks RecipeIngredient[]
+
+  @@unique([barcode])
+  @@unique([userId, name])
+  @@index([name])
 }
 
 model RecipeIngredient {
@@ -152,20 +166,50 @@ model DailyLog {
 }
 
 // Sport tracker
-model WorkoutTemplate {
-  id          String             @id @default(uuid())
-  name        String             @unique
+
+// Bibliothèque d'exercices
+model Exercise {
+  id          String   @id @default(uuid())
+  user        User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId      String?  // null = exercice global/prédéfini
+  name        String
+  muscleGroup String?  // chest, back, legs, shoulders, arms, core, cardio
+  equipment   String?  // barbell, dumbbell, machine, bodyweight, cable, other
   description String?
-  focus       String?
+  isGlobal    Boolean  @default(false)
+  createdAt   DateTime @default(now())
+
+  templateExercises WorkoutExerciseTemplate[]
+
+  @@unique([userId, name])
+  @@index([name])
+  @@index([muscleGroup])
+}
+
+model WorkoutTemplate {
+  id          String   @id @default(uuid())
+  user        User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId      String?  // null = template global
+  name        String
+  description String?
+  focus       String?  // upper, lower, push, pull, full, cardio
+  isGlobal    Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @default(now()) @updatedAt
+
   exercises   WorkoutExerciseTemplate[]
   sessions    WorkoutSession[]
+
+  @@unique([userId, name])
 }
 
 model WorkoutExerciseTemplate {
   id              String           @id @default(uuid())
   template        WorkoutTemplate  @relation(fields: [templateId], references: [id], onDelete: Cascade)
   templateId      String
-  name            String
+  exercise        Exercise?        @relation(fields: [exerciseId], references: [id])
+  exerciseId      String?
+  name            String           // Gardé pour rétrocompatibilité
   sets            Int
   repsMin         Int
   repsMax         Int

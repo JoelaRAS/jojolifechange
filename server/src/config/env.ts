@@ -17,5 +17,6 @@ export const env = {
   googleClientId: process.env.GOOGLE_CLIENT_ID ?? "",
   googleClientSecret: process.env.GOOGLE_CLIENT_SECRET ?? "",
   googleRedirectUri: process.env.GOOGLE_REDIRECT_URI ?? "",
-  appBaseUrl: process.env.APP_BASE_URL ?? "http://localhost:3000"
+  appBaseUrl: process.env.APP_BASE_URL ?? "http://localhost:3000",
+  geminiApiKey: process.env.GEMINI_API_KEY ?? "",
 };

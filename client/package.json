@@ -30,6 +30,7 @@
     "compression": "^1.7.4",
     "express": "^4.19.2",
     "framer-motion": "^11.2.12",
+    "html5-qrcode": "^2.3.8",
     "http-proxy-middleware": "^3.0.0",
     "lucide-react": "^0.425.0",
     "react": "^18.3.1",

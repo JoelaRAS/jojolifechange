@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "../../lib/api";
+import { ExerciseLibrary } from "../../components/ExerciseLibrary";
+import { WorkoutTemplateManager } from "../../components/WorkoutTemplateManager";
 import {
   Card,
   CardContent,
@@ -539,36 +541,24 @@ export const SportPage = () => {
                 {isSavingSession
                   ? "Enregistrement..."
                   : editingSessionId
-                  ? "Mettre à jour"
-                  : "Ajouter la séance"}
+                    ? "Mettre à jour"
+                    : "Ajouter la séance"}
               </Button>
             </div>
           </CardContent>
         </Card>
 
         <Card className="bg-card/70">
-          <CardHeader>
-            <CardTitle>Templates</CardTitle>
-            <CardDescription>Séances Upper/Lower preconfigurées Lucas Gouiffes.</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            {templates.map((template) => (
-              <div key={template.id} className={cn("rounded-lg border px-3 py-2", template.id === selectedTemplateId ? "border-primary bg-primary/5" : "border-border/70 bg-background/60")}
-              >
-                <div className="flex items-center justify-between text-sm">
-                  <span className="font-semibold">{template.name}</span>
-                  <Badge variant="outline">{template.focus?.toUpperCase()}</Badge>
-                </div>
-                <ul className="mt-2 space-y-1 text-xs text-muted-foreground">
-                  {template.exercises.map((exercise) => (
-                    <li key={exercise.id}>
-                      {exercise.name} — {exercise.sets} x {exercise.repsMin}-{exercise.repsMax} ({Math.round(exercise.restSeconds / 60)} min repos)
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            ))}
-            {!templates.length && <p className="text-sm text-muted-foreground">Chargement des templates...</p>}
+          <CardContent className="pt-6">
+            <WorkoutTemplateManager onTemplateSelect={(templateId) => handleTemplateChange(templateId)} />
+          </CardContent>
+        </Card>
+      </section>
+
+      <section>
+        <Card className="bg-card/70">
+          <CardContent className="pt-6">
+            <ExerciseLibrary />
           </CardContent>
         </Card>
       </section>

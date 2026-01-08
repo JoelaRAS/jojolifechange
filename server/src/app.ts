@@ -6,7 +6,9 @@ import fs from "node:fs";
 import { env } from "./config/env";
 import { authRouter } from "./modules/auth/router";
 import { nutritionRouter } from "./modules/nutrition/router";
+import { ingredientsRouter } from "./modules/nutrition/ingredients";
 import { sportRouter } from "./modules/sport/router";
+import { exercisesRouter } from "./modules/sport/exercises";
 import { metricsRouter } from "./modules/metrics/router";
 import { financeRouter } from "./modules/finance/router";
 import { socialRouter } from "./modules/social/router";
@@ -39,7 +41,9 @@ const mount = (basePath: string, router: express.Router) => {
 
 mount("/auth", authRouter);
 mount("/nutrition", nutritionRouter);
+mount("/nutrition/ingredients", ingredientsRouter);
 mount("/sport", sportRouter);
+mount("/sport/exercises", exercisesRouter);
 mount("/metrics", metricsRouter);
 mount("/finance", financeRouter);
 mount("/social", socialRouter);

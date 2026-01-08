@@ -2,6 +2,8 @@ import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { z } from "zod";
 import { api } from "../../lib/api";
+import { QuickScanButton } from "../../components/QuickScanButton";
+import { IngredientAutocomplete } from "../../components/IngredientAutocomplete";
 import {
   Card,
   CardContent,
@@ -271,11 +273,11 @@ export const NutritionPage = () => {
     }
   });
 
-const recipeForm = useForm<RecipeFormValues>({
-  resolver: zodResolver(recipeFormSchema),
-  defaultValues: {
-    servings: 1,
-    ingredients: [
+  const recipeForm = useForm<RecipeFormValues>({
+    resolver: zodResolver(recipeFormSchema),
+    defaultValues: {
+      servings: 1,
+      ingredients: [
         {
           name: "",
           quantity: 100,
@@ -289,204 +291,204 @@ const recipeForm = useForm<RecipeFormValues>({
     }
   });
 
-const ingredientFields = useFieldArray({
-  control: recipeForm.control,
-  name: "ingredients"
-});
+  const ingredientFields = useFieldArray({
+    control: recipeForm.control,
+    name: "ingredients"
+  });
 
-const [editingRecipeId, setEditingRecipeId] = useState<string | null>(null);
-const [shoppingDraft, setShoppingDraft] = useState<Record<string, string>>({});
+  const [editingRecipeId, setEditingRecipeId] = useState<string | null>(null);
+  const [shoppingDraft, setShoppingDraft] = useState<Record<string, string>>({});
 
-const createRecipeMutation = useMutation({
-  mutationFn: async (values: RecipeFormValues) => {
-    const response = await api.post<Recipe>("/nutrition/recipes", values);
-    return response.data;
-  },
-  onSuccess: () => {
-    void queryClient.invalidateQueries({ queryKey: ["recipes"] });
-    recipeForm.reset();
-    setEditingRecipeId(null);
-  }
-});
-
-const updateRecipeMutation = useMutation({
-  mutationFn: async ({ id, data }: { id: string; data: RecipeFormValues }) => {
-    const response = await api.put<Recipe>(`/nutrition/recipes/${id}`, data);
-    return response.data;
-  },
-  onSuccess: () => {
-    void queryClient.invalidateQueries({ queryKey: ["recipes"] });
-    recipeForm.reset();
-    setEditingRecipeId(null);
-  }
-});
-
-const duplicateRecipeMutation = useMutation({
-  mutationFn: async (id: string) => {
-    const { data } = await api.post<Recipe>(`/nutrition/recipes/${id}/duplicate`);
-    return data;
-  },
-  onSuccess: () => {
-    void queryClient.invalidateQueries({ queryKey: ["recipes"] });
-  }
-});
-
-const deleteRecipeMutation = useMutation({
-  mutationFn: async (id: string) => {
-    await api.delete(`/nutrition/recipes/${id}`);
-  },
-  onSuccess: () => {
-    void queryClient.invalidateQueries({ queryKey: ["recipes"] });
-    if (editingRecipeId) {
+  const createRecipeMutation = useMutation({
+    mutationFn: async (values: RecipeFormValues) => {
+      const response = await api.post<Recipe>("/nutrition/recipes", values);
+      return response.data;
+    },
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ["recipes"] });
       recipeForm.reset();
       setEditingRecipeId(null);
     }
-  }
-});
+  });
 
-const saveMealPlanMutation = useMutation({
-  mutationFn: async (mealPlan: MealPlanPayload) => {
-    const response = await api.post<MealPlan>("/nutrition/meal-plans", mealPlan);
-    return response.data;
-  },
-  onSuccess: () => {
-    void queryClient.invalidateQueries({ queryKey: ["meal-plan", isoWeek] });
-    void queryClient.invalidateQueries({ queryKey: ["shopping-list"] });
-  }
-});
+  const updateRecipeMutation = useMutation({
+    mutationFn: async ({ id, data }: { id: string; data: RecipeFormValues }) => {
+      const response = await api.put<Recipe>(`/nutrition/recipes/${id}`, data);
+      return response.data;
+    },
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ["recipes"] });
+      recipeForm.reset();
+      setEditingRecipeId(null);
+    }
+  });
 
-const generateShoppingListMutation = useMutation({
-  mutationFn: async () => {
-    await api.post("/nutrition/shopping-list/generate", { weekStart: isoWeek });
-  },
-  onSuccess: () => {
-    void queryClient.invalidateQueries({ queryKey: ["shopping-list"] });
-    void queryClient.invalidateQueries({ queryKey: ["pantry"] });
-  }
-});
+  const duplicateRecipeMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const { data } = await api.post<Recipe>(`/nutrition/recipes/${id}/duplicate`);
+      return data;
+    },
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ["recipes"] });
+    }
+  });
 
-const toggleShoppingItemMutation = useMutation({
-  mutationFn: async ({ id, checked }: { id: string; checked: boolean }) => {
-    const { data } = await api.patch<ShoppingListItem>(`/nutrition/shopping-list/${id}`, { checked });
-    return data;
-  },
-  onSuccess: () => {
-    void queryClient.invalidateQueries({ queryKey: ["shopping-list"] });
-    void queryClient.invalidateQueries({ queryKey: ["pantry"] });
-  }
-});
+  const deleteRecipeMutation = useMutation({
+    mutationFn: async (id: string) => {
+      await api.delete(`/nutrition/recipes/${id}`);
+    },
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ["recipes"] });
+      if (editingRecipeId) {
+        recipeForm.reset();
+        setEditingRecipeId(null);
+      }
+    }
+  });
 
-const deleteShoppingItemMutation = useMutation({
-  mutationFn: async (id: string) => {
-    await api.delete(`/nutrition/shopping-list/${id}`);
-  },
-  onSuccess: () => {
-    void queryClient.invalidateQueries({ queryKey: ["shopping-list"] });
-  }
-});
+  const saveMealPlanMutation = useMutation({
+    mutationFn: async (mealPlan: MealPlanPayload) => {
+      const response = await api.post<MealPlan>("/nutrition/meal-plans", mealPlan);
+      return response.data;
+    },
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ["meal-plan", isoWeek] });
+      void queryClient.invalidateQueries({ queryKey: ["shopping-list"] });
+    }
+  });
 
-const updateShoppingItemMutation = useMutation({
-  mutationFn: async ({ id, quantity, unit }: { id: string; quantity: number; unit?: string }) => {
-    const { data } = await api.patch<ShoppingListItem>(`/nutrition/shopping-list/${id}`, {
-      quantity,
-      unit
-    });
-    return { data, id };
-  },
-  onSuccess: ({ data, id }) => {
-    setShoppingDraft((prev) => ({ ...prev, [id]: data.quantity.toString() }));
-    void queryClient.invalidateQueries({ queryKey: ["shopping-list"] });
-  }
-});
+  const generateShoppingListMutation = useMutation({
+    mutationFn: async () => {
+      await api.post("/nutrition/shopping-list/generate", { weekStart: isoWeek });
+    },
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ["shopping-list"] });
+      void queryClient.invalidateQueries({ queryKey: ["pantry"] });
+    }
+  });
 
-const createShoppingItemMutation = useMutation({
-  mutationFn: async (values: { name: string; quantity: number; unit?: string }) => {
-    await api.post<ShoppingListItem>("/nutrition/shopping-list", {
-      name: values.name,
-      quantity: values.quantity,
-      unit: values.unit?.trim() ? values.unit.trim() : undefined
-    });
-  },
-  onSuccess: () => {
-    void queryClient.invalidateQueries({ queryKey: ["shopping-list"] });
-    shoppingItemForm.reset({ name: "", quantity: 1, unit: "" });
-  }
-});
+  const toggleShoppingItemMutation = useMutation({
+    mutationFn: async ({ id, checked }: { id: string; checked: boolean }) => {
+      const { data } = await api.patch<ShoppingListItem>(`/nutrition/shopping-list/${id}`, { checked });
+      return data;
+    },
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ["shopping-list"] });
+      void queryClient.invalidateQueries({ queryKey: ["pantry"] });
+    }
+  });
 
-const pantryUpsertMutation = useMutation({
-  mutationFn: async (values: PantryFormValues) => {
-    const { data } = await api.post<PantryItem>("/nutrition/pantry", values);
-    return data;
-  },
-  onSuccess: () => {
-    void queryClient.invalidateQueries({ queryKey: ["pantry"] });
-  }
-});
+  const deleteShoppingItemMutation = useMutation({
+    mutationFn: async (id: string) => {
+      await api.delete(`/nutrition/shopping-list/${id}`);
+    },
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ["shopping-list"] });
+    }
+  });
 
-const updatePantryItemMutation = useMutation({
-  mutationFn: async ({ id, quantity, unit }: { id: string; quantity: number; unit?: string }) => {
-    const { data } = await api.patch<PantryItem>(`/nutrition/pantry/${id}`, { quantity, unit });
-    return data;
-  },
-  onSuccess: () => {
-    void queryClient.invalidateQueries({ queryKey: ["pantry"] });
-  }
-});
+  const updateShoppingItemMutation = useMutation({
+    mutationFn: async ({ id, quantity, unit }: { id: string; quantity: number; unit?: string }) => {
+      const { data } = await api.patch<ShoppingListItem>(`/nutrition/shopping-list/${id}`, {
+        quantity,
+        unit
+      });
+      return { data, id };
+    },
+    onSuccess: ({ data, id }) => {
+      setShoppingDraft((prev) => ({ ...prev, [id]: data.quantity.toString() }));
+      void queryClient.invalidateQueries({ queryKey: ["shopping-list"] });
+    }
+  });
 
-const deletePantryItemMutation = useMutation({
-  mutationFn: async (id: string) => {
-    await api.delete(`/nutrition/pantry/${id}`);
-  },
-  onSuccess: () => {
-    void queryClient.invalidateQueries({ queryKey: ["pantry"] });
-  }
-});
+  const createShoppingItemMutation = useMutation({
+    mutationFn: async (values: { name: string; quantity: number; unit?: string }) => {
+      await api.post<ShoppingListItem>("/nutrition/shopping-list", {
+        name: values.name,
+        quantity: values.quantity,
+        unit: values.unit?.trim() ? values.unit.trim() : undefined
+      });
+    },
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ["shopping-list"] });
+      shoppingItemForm.reset({ name: "", quantity: 1, unit: "" });
+    }
+  });
 
-const logMealMutation = useMutation({
-  mutationFn: async (payload: DailyLogFormValues) => {
-    await api.post("/nutrition/daily-log", payload);
-  },
-  onSuccess: () => {
-    void queryClient.invalidateQueries({ queryKey: ["daily-log", isoWeek] });
-    void queryClient.invalidateQueries({ queryKey: ["nutrition-analytics", isoWeek] });
-  }
-});
+  const pantryUpsertMutation = useMutation({
+    mutationFn: async (values: PantryFormValues) => {
+      const { data } = await api.post<PantryItem>("/nutrition/pantry", values);
+      return data;
+    },
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ["pantry"] });
+    }
+  });
 
-const deleteDailyLogMutation = useMutation({
-  mutationFn: async (id: string) => {
-    await api.delete(`/nutrition/daily-log/${id}`);
-  },
-  onSuccess: () => {
-    void queryClient.invalidateQueries({ queryKey: ["daily-log", isoWeek] });
-    void queryClient.invalidateQueries({ queryKey: ["nutrition-analytics", isoWeek] });
-  }
-});
+  const updatePantryItemMutation = useMutation({
+    mutationFn: async ({ id, quantity, unit }: { id: string; quantity: number; unit?: string }) => {
+      const { data } = await api.patch<PantryItem>(`/nutrition/pantry/${id}`, { quantity, unit });
+      return data;
+    },
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ["pantry"] });
+    }
+  });
 
-const dailyLogForm = useForm<DailyLogFormValues>({
-  resolver: zodResolver(dailyLogSchema),
-  defaultValues: {
-    date: isoWeek,
-    mealType: "LUNCH",
-    servings: 1
-  }
-});
+  const deletePantryItemMutation = useMutation({
+    mutationFn: async (id: string) => {
+      await api.delete(`/nutrition/pantry/${id}`);
+    },
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ["pantry"] });
+    }
+  });
 
-const pantryForm = useForm<PantryFormValues>({
-  resolver: zodResolver(pantryFormSchema),
-  defaultValues: {
-    name: "",
-    quantity: 0,
-    unit: ""
-  }
-});
+  const logMealMutation = useMutation({
+    mutationFn: async (payload: DailyLogFormValues) => {
+      await api.post("/nutrition/daily-log", payload);
+    },
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ["daily-log", isoWeek] });
+      void queryClient.invalidateQueries({ queryKey: ["nutrition-analytics", isoWeek] });
+    }
+  });
 
-const shoppingItemForm = useForm<{ name: string; quantity: number; unit?: string }>({
-  defaultValues: {
-    name: "",
-    quantity: 1,
-    unit: ""
-  }
-});
+  const deleteDailyLogMutation = useMutation({
+    mutationFn: async (id: string) => {
+      await api.delete(`/nutrition/daily-log/${id}`);
+    },
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ["daily-log", isoWeek] });
+      void queryClient.invalidateQueries({ queryKey: ["nutrition-analytics", isoWeek] });
+    }
+  });
+
+  const dailyLogForm = useForm<DailyLogFormValues>({
+    resolver: zodResolver(dailyLogSchema),
+    defaultValues: {
+      date: isoWeek,
+      mealType: "LUNCH",
+      servings: 1
+    }
+  });
+
+  const pantryForm = useForm<PantryFormValues>({
+    resolver: zodResolver(pantryFormSchema),
+    defaultValues: {
+      name: "",
+      quantity: 0,
+      unit: ""
+    }
+  });
+
+  const shoppingItemForm = useForm<{ name: string; quantity: number; unit?: string }>({
+    defaultValues: {
+      name: "",
+      quantity: 1,
+      unit: ""
+    }
+  });
 
   const totals = useMemo(() => {
     const ingredients = recipeForm.watch("ingredients");
@@ -651,15 +653,15 @@ const shoppingItemForm = useForm<{ name: string; quantity: number; unit?: string
     updateShoppingItemMutation.mutate({ id: item.id, quantity, unit: item.unit ?? undefined });
   };
 
-const handlePantrySubmit = pantryForm.handleSubmit(async (values) => {
-  await pantryUpsertMutation.mutateAsync(values);
-  pantryForm.reset({ name: "", quantity: 0, unit: "" });
-});
+  const handlePantrySubmit = pantryForm.handleSubmit(async (values) => {
+    await pantryUpsertMutation.mutateAsync(values);
+    pantryForm.reset({ name: "", quantity: 0, unit: "" });
+  });
 
-const handlePantryQuantityCommit = (item: PantryItem, quantity: number) => {
-  if (Number.isNaN(quantity)) return;
-  updatePantryItemMutation.mutate({ id: item.id, quantity, unit: item.unit ?? undefined });
-};
+  const handlePantryQuantityCommit = (item: PantryItem, quantity: number) => {
+    if (Number.isNaN(quantity)) return;
+    updatePantryItemMutation.mutate({ id: item.id, quantity, unit: item.unit ?? undefined });
+  };
 
   const handlePantryDelete = (id: string) => {
     deletePantryItemMutation.mutate(id);
@@ -753,7 +755,19 @@ const handlePantryQuantityCommit = (item: PantryItem, quantity: number) => {
                       <div className="grid gap-3 sm:grid-cols-6">
                         <div className="sm:col-span-2 space-y-2">
                           <Label>Nom</Label>
-                          <Input {...recipeForm.register(`ingredients.${index}.name`)} placeholder="Poulet" />
+                          <IngredientAutocomplete
+                            value={recipeForm.watch(`ingredients.${index}.name`) || ""}
+                            onChange={(name) => recipeForm.setValue(`ingredients.${index}.name`, name)}
+                            onSelect={(data) => {
+                              recipeForm.setValue(`ingredients.${index}.name`, data.name);
+                              recipeForm.setValue(`ingredients.${index}.unit`, data.unit || "g");
+                              recipeForm.setValue(`ingredients.${index}.calories`, data.calories);
+                              recipeForm.setValue(`ingredients.${index}.protein`, data.protein);
+                              recipeForm.setValue(`ingredients.${index}.carbs`, data.carbs);
+                              recipeForm.setValue(`ingredients.${index}.fat`, data.fat);
+                            }}
+                            placeholder="Rechercher un ingrédient..."
+                          />
                         </div>
                         <div className="space-y-2">
                           <Label>Quantité</Label>
@@ -804,8 +818,8 @@ const handlePantryQuantityCommit = (item: PantryItem, quantity: number) => {
                     ? "Mise à jour..."
                     : "Mettre à jour"
                   : isSavingRecipe
-                  ? "Enregistrement..."
-                  : "Créer la recette"}
+                    ? "Enregistrement..."
+                    : "Créer la recette"}
               </Button>
             </form>
 
@@ -901,6 +915,7 @@ const handlePantryQuantityCommit = (item: PantryItem, quantity: number) => {
               <Button type="submit" size="sm" disabled={createShoppingItemMutation.isPending}>
                 {createShoppingItemMutation.isPending ? "Ajout..." : "Ajouter"}
               </Button>
+              <QuickScanButton type="shopping" onSuccess={() => void queryClient.invalidateQueries({ queryKey: ["shopping-list"] })} />
             </form>
             <div className="space-y-3">
               {shoppingListQuery.data?.map((item) => (
@@ -966,6 +981,7 @@ const handlePantryQuantityCommit = (item: PantryItem, quantity: number) => {
                 <Button type="submit" variant="secondary" size="sm" disabled={pantryUpsertMutation.isPending}>
                   Ajouter
                 </Button>
+                <QuickScanButton type="pantry" onSuccess={() => void queryClient.invalidateQueries({ queryKey: ["pantry"] })} />
               </form>
               <div className="mt-3 space-y-2">
                 {pantryQuery.data?.length ? (
